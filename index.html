@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f1e9">
+  <title>洞穴救援 · 社会契约思想实验</title>
+  <style>
+    /* ===== 全局颜色与基础样式：修改这里可以快速调整整页风格 ===== */
+    :root {
+      color-scheme: light;
+      --ink: #202b2a;
+      --muted: #64716e;
+      --paper: #f4f1e9;
+      --card: #fffefa;
+      --green: #315d50;
+      --green-dark: #23463d;
+      --lime: #d7e5a5;
+      --line: #e7e4da;
+      --rust: #b86145;
+      --shadow: 0 18px 50px rgba(34, 49, 45, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 10% 0%, rgba(215, 229, 165, .32), transparent 34rem),
+        var(--paper);
+      color: var(--ink);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      line-height: 1.7;
+    }
+
+    button { font: inherit; }
+
+    .page-shell {
+      width: min(100% - 40px, 1040px);
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    .topbar, .brand, .top-actions, .step-label, .choice-meta, .button-row {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar { justify-content: space-between; gap: 16px; margin-bottom: 30px; }
+    .brand { gap: 10px; font-size: 13px; font-weight: 700; letter-spacing: .08em; }
+    .brand-mark {
+      display: grid;
+      width: 34px;
+      height: 34px;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--green);
+      color: white;
+      font-size: 17px;
+    }
+    .top-actions { gap: 8px; color: var(--muted); font-size: 12px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #87a85a; }
+
+    .progress-wrap { margin: 0 0 25px; }
+    .progress-heading { display: flex; justify-content: space-between; margin-bottom: 9px; color: var(--muted); font-size: 12px; }
+    .progress-track { height: 5px; overflow: hidden; border-radius: 9px; background: #e5e3d9; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--green); transition: width .35s ease; }
+
+    .stage {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(260px, .82fr);
+      min-height: 270px;
+      overflow: hidden;
+      border: 1px solid rgba(49, 93, 80, .1);
+      border-radius: 23px;
+      background: #e9eddf;
+      box-shadow: var(--shadow);
+    }
+
+    .stage-copy { align-self: center; padding: 38px 42px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 13px;
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { width: 18px; height: 1px; background: currentColor; content: ""; }
+    h1, h2, h3, p { margin-top: 0; }
+    .stage h1 { max-width: 560px; margin-bottom: 12px; font-size: clamp(29px, 4vw, 43px); letter-spacing: -.045em; line-height: 1.2; }
+    .stage-copy p { max-width: 510px; margin-bottom: 0; color: #53635d; font-size: 14px; }
+    .stage-art {
+      display: grid;
+      min-height: 260px;
+      place-items: center;
+      padding: 18px;
+      background: linear-gradient(145deg, #dce5d2, #cbd9c8);
+    }
+    .stage-art svg { width: min(100%, 340px); height: auto; }
+
+    .content-card {
+      margin-top: 22px;
+      padding: 30px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--card);
+      box-shadow: 0 10px 32px rgba(34, 49, 45, .045);
+    }
+    .section-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 18px; margin-bottom: 19px; }
+    .section-heading h2 { margin: 0 0 3px; font-size: 20px; letter-spacing: -.025em; }
+    .section-heading p { margin: 0; color: var(--muted); font-size: 13px; }
+    .small-tag { flex: 0 0 auto; padding: 5px 10px; border-radius: 20px; background: #f0f3e8; color: var(--green); font-size: 11px; font-weight: 700; }
+
+    .choice-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .choice {
+      position: relative;
+      min-height: 119px;
+      padding: 18px 18px 16px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+    }
+    .choice:hover { transform: translateY(-3px); border-color: #9eb4a3; box-shadow: 0 9px 22px rgba(34, 49, 45, .08); }
+    .choice:focus-visible, .primary-button:focus-visible, .secondary-button:focus-visible, .reset-button:focus-visible {
+      outline: 3px solid #9dbb72;
+      outline-offset: 3px;
+    }
+    .choice[aria-pressed="true"] { border-color: var(--green); background: #f5f8ee; box-shadow: inset 0 0 0 1px var(--green); }
+    .choice-meta { justify-content: space-between; margin-bottom: 7px; }
+    .choice-letter { color: var(--green); font-size: 11px; font-weight: 900; letter-spacing: .1em; }
+    .choice-theory { color: #82908a; font-size: 11px; }
+    .choice-title { display: block; font-size: 15px; font-weight: 750; line-height: 1.55; }
+
+    .explanation {
+      display: none;
+      margin-top: 17px;
+      padding: 20px 22px;
+      border-left: 3px solid #91aa70;
+      border-radius: 0 14px 14px 0;
+      background: #f3f5ec;
+      animation: reveal .25s ease both;
+    }
+    .explanation.visible { display: block; }
+    .explanation h3 { margin-bottom: 6px; font-size: 15px; }
+    .explanation p { margin: 0; color: #52615b; font-size: 13px; }
+    .button-row { justify-content: space-between; gap: 12px; margin-top: 22px; }
+    .helper-text { color: var(--muted); font-size: 12px; }
+    .primary-button, .secondary-button, .reset-button {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 9px;
+      border: 0;
+      border-radius: 11px;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease;
+    }
+    .primary-button { padding: 12px 18px; background: var(--green); color: white; font-size: 13px; font-weight: 750; }
+    .primary-button:hover { transform: translateY(-1px); background: var(--green-dark); }
+    .secondary-button { padding: 12px 15px; border: 1px solid var(--line); background: white; color: var(--ink); font-size: 13px; font-weight: 700; }
+    .secondary-button:hover { background: #f5f5ef; }
+
+    .decision-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .decision-card {
+      display: flex;
+      min-height: 126px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 19px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: white;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .decision-card:hover { transform: translateY(-3px); border-color: #9eb4a3; box-shadow: 0 9px 22px rgba(34, 49, 45, .08); }
+    .decision-card[aria-pressed="true"] { border-color: var(--green); background: #f5f8ee; box-shadow: inset 0 0 0 1px var(--green); }
+    .decision-card strong { font-size: 16px; }
+    .decision-card span { color: var(--muted); font-size: 12px; }
+
+    .result-lead { margin: 0 0 17px; color: var(--green); font-size: 16px; font-weight: 800; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .result-note { padding: 17px; border-radius: 13px; background: #f4f5ef; }
+    .result-note h3 { margin-bottom: 6px; font-size: 13px; }
+    .result-note p { margin: 0; color: #58655f; font-size: 12px; }
+    .discussion-prompt { margin-top: 15px; padding: 15px 17px; border: 1px dashed #c9cdbd; border-radius: 13px; color: #53615b; font-size: 13px; }
+    .discussion-prompt strong { color: var(--ink); }
+
+    .footer { display: flex; justify-content: space-between; align-items: center; gap: 14px; margin-top: 23px; color: #7d8580; font-size: 11px; }
+    .reset-button { padding: 8px 11px; border: 1px solid #deded4; background: transparent; color: #52615b; font-size: 11px; }
+    .reset-button:hover { background: #fffefa; }
+    .hidden { display: none !important; }
+
+    @keyframes reveal { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 680px) {
+      .page-shell { width: min(100% - 26px, 540px); padding-top: 17px; }
+      .topbar { margin-bottom: 22px; }
+      .stage { grid-template-columns: 1fr; }
+      .stage-copy { padding: 27px 24px 23px; }
+      .stage-art { min-height: 185px; }
+      .stage-art svg { width: min(74%, 270px); }
+      .content-card { padding: 22px 17px; }
+      .section-heading { align-items: flex-start; }
+      .choice-grid, .decision-grid, .result-grid { grid-template-columns: 1fr; }
+      .choice { min-height: 104px; }
+      .footer { align-items: flex-start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-shell">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">洞</span><span>哲学 · 互动思想实验</span></div>
+      <div class="top-actions"><span class="live-dot" aria-hidden="true"></span><span>课堂讨论模式</span></div>
+    </header>
+
+    <div class="progress-wrap" aria-label="体验进度">
+      <div class="progress-heading"><span id="progress-label">故事开场</span><span id="progress-count">第 0 / 3 步</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+    </div>
+
+    <!-- 场景区：各步骤的剧情标题、说明和内嵌 SVG 插画都由 JavaScript 更新。 -->
+    <section class="stage" aria-live="polite">
+      <div class="stage-copy">
+        <div class="eyebrow" id="stage-eyebrow">思想实验 · 01</div>
+        <h1 id="stage-title">洞穴救援</h1>
+        <p id="stage-description"></p>
+      </div>
+      <div class="stage-art" id="stage-art" aria-hidden="true"></div>
+    </section>
+
+    <!-- 每一步的互动内容显示在这个独立阅读容器中。 -->
+    <section class="content-card" id="step-0">
+      <div class="section-heading">
+        <div><h2>先走进故事</h2><p>读完背景，再进入契约选择。</p></div>
+        <span class="small-tag">无知之幕</span>
+      </div>
+      <p style="max-width:720px;color:#53615b;font-size:14px;margin-bottom:0">
+        一场山地探险后，几位探险者被困在洞穴深处。出口被落石堵住，救援至少还要三天；洞里的食物只够一部分人撑到那时。你们必须现在决定危机规则，却不知道自己会不会受伤、体力如何，也不知道最终会轮到谁承担代价。<br><br>
+        请暂时放下对自身处境的猜测：如果你不知道自己将成为谁，你愿意和大家共同约定怎样的规则？
+      </p>
+      <div class="button-row">
+        <span class="helper-text">没有标准答案，试着说明你的理由。</span>
+        <button class="primary-button" id="start-button" type="button">进入契约选择 <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section class="content-card hidden" id="step-1">
+      <div class="section-heading">
+        <div><h2>在无知之幕后立约</h2><p>单选一条你愿意事先共同遵守的危机规则。</p></div>
+        <span class="small-tag">选择一项</span>
+      </div>
+      <div class="choice-grid" role="group" aria-label="契约规则">
+        <button class="choice" type="button" data-choice="A" aria-pressed="false">
+          <span class="choice-meta"><span class="choice-letter">契约 A</span><span class="choice-theory">功利主义</span></span>
+          <span class="choice-title">抽签牺牲一人，保全多数</span>
+        </button>
+        <button class="choice" type="button" data-choice="B" aria-pressed="false">
+          <span class="choice-meta"><span class="choice-letter">契约 B</span><span class="choice-theory">洛克</span></span>
+          <span class="choice-title">禁止主动伤害、平分食物，生命权不可让渡</span>
+        </button>
+        <button class="choice" type="button" data-choice="C" aria-pressed="false">
+          <span class="choice-meta"><span class="choice-letter">契约 C</span><span class="choice-theory">罗尔斯</span></span>
+          <span class="choice-title">食物优先供给弱者与伤员</span>
+        </button>
+        <button class="choice" type="button" data-choice="D" aria-pressed="false">
+          <span class="choice-meta"><span class="choice-letter">契约 D</span><span class="choice-theory">霍布斯</span></span>
+          <span class="choice-title">不立契约，回到自然状态，各自抢夺</span>
+        </button>
+      </div>
+      <div class="explanation" id="choice-explanation" aria-live="polite">
+        <h3 id="explanation-title"></h3>
+        <p id="explanation-text"></p>
+      </div>
+      <div class="button-row">
+        <span class="helper-text" id="choice-hint">选择后会出现对应的哲学解读。</span>
+        <button class="primary-button" id="to-reversal-button" type="button" disabled style="opacity:.5;cursor:not-allowed">进入反转考验 <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section class="content-card hidden" id="step-2">
+      <div class="section-heading">
+        <div><h2 id="reversal-heading">轮到你承担代价</h2><p id="reversal-context">契约已经生效。现在抽签结果揭晓了……</p></div>
+        <span class="small-tag">反转考验</span>
+      </div>
+      <div class="decision-grid" role="group" aria-label="面对反转的选择">
+        <button class="decision-card" type="button" data-decision="honor" aria-pressed="false">
+          <strong id="honor-title">遵守契约</strong>
+          <span id="honor-description">按事先共同认可的规则承担结果。</span>
+        </button>
+        <button class="decision-card" id="alternative-decision" type="button" data-decision="repent" aria-pressed="false">
+          <strong id="alternative-title">反悔</strong>
+          <span id="alternative-description">拒绝接受规则落在自己身上，优先保全自己。</span>
+        </button>
+      </div>
+      <div class="button-row">
+        <span class="helper-text">想象你此刻真正面对生死抉择。</span>
+        <button class="primary-button" id="to-result-button" type="button" disabled style="opacity:.5;cursor:not-allowed">查看思想碰撞 <span aria-hidden="true">→</span></button>
+      </div>
+    </section>
+
+    <section class="content-card hidden" id="step-3" aria-live="polite">
+      <div class="section-heading">
+        <div><h2>你的思想实验结果</h2><p>这不是给你贴标签，而是把两种价值张力摆在一起。</p></div>
+        <span class="small-tag">讨论与反思</span>
+      </div>
+      <p class="result-lead" id="result-lead"></p>
+      <div class="result-grid">
+        <article class="result-note"><h3>卢梭：共同规则与公意</h3><p id="rousseau-text"></p></article>
+        <article class="result-note"><h3>洛克：不可转让的自然权利</h3><p id="locke-text"></p></article>
+      </div>
+      <div class="discussion-prompt"><strong>可以继续追问：</strong><span id="discussion-text"></span></div>
+      <div class="button-row">
+        <span class="helper-text">把你的理由带回课堂讨论。</span>
+        <button class="secondary-button" id="restart-inline" type="button">再想一次 ↺</button>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>洞穴救援 · 社会契约思想实验</span>
+      <button class="reset-button" id="reset-button" type="button">↺ 从头再来</button>
+    </footer>
+  </main>
+
+  <script>
+    // ===== 可修改的剧情文案与哲学解读 =====
+    const contracts = {
+      A: {
+        name: "抽签牺牲一人，保全多数",
+        theory: "功利主义",
+        explanation: "这条规则以整体结果为衡量标准：牺牲较少者以增加多数人的生存机会。它追求总福祉，却也引出疑问：能否把一个人的生命当作实现多数利益的手段？"
+      },
+      B: {
+        name: "禁止主动伤害、平分食物，生命权不可让渡",
+        theory: "洛克",
+        explanation: "平分食物体现相互约束，禁止主动伤害则强调每个人都有不能被他人随意剥夺的生命权。即使大家订立规则，也要追问：个人能否同意放弃自己的基本自然权利？"
+      },
+      C: {
+        name: "食物优先供给弱者与伤员",
+        theory: "罗尔斯最大最小值",
+        explanation: "在不知道自己强弱、伤病的处境下，优先改善最不利者的生存机会，符合“最大化最小保障”的思路。它把公平的重点放在最脆弱的人身上。"
+      },
+      D: {
+        name: "不立契约，回到自然状态，各自抢夺",
+        theory: "霍布斯",
+        explanation: "没有共同规则和执行力量时，每个人都只能自行争取生存资源，可能陷入不安全与相互猜疑。霍布斯式的提醒是：缺乏共同权威，和平与保障都很脆弱。"
+      }
+    };
+
+    // 场景插画使用本页内嵌 SVG，不依赖图片文件或外部 CDN。
+    const caveIllustration = `
+      <svg viewBox="0 0 360 245" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="洞穴与探险者插画">
+        <ellipse cx="183" cy="219" rx="143" ry="15" fill="#9eb3a1" opacity=".45"/>
+        <path d="M37 209V135C43 72 92 32 157 39c28-32 84-26 104 3 39 15 62 49 62 96v71H37Z" fill="#536f62"/>
+        <path d="M67 209v-68c0-43 34-77 77-77 21-24 64-22 81 7 36 2 65 32 65 70v68H67Z" fill="#263e38"/>
+        <path d="M51 209c28-32 59-27 79-5 19-33 47-31 63-4 23-26 49-18 60 9h43v13H51Z" fill="#708878"/>
+        <path d="M75 199c28-16 44-16 65 0m55 2c18-21 39-23 59-4" fill="none" stroke="#aabca7" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="181" cy="150" r="13" fill="#d7a47a"/><path d="M168 151c1-14 23-18 29-3l-2 7h-26Z" fill="#d7e5a5"/>
+        <path d="M170 166h23l7 36h-36l6-36Z" fill="#c77753"/><path d="m171 175-15 17m35-17 14 14m-25-3-13 22m20-22 12 22" fill="none" stroke="#e8c09c" stroke-width="7" stroke-linecap="round"/>
+        <path d="M103 91 123 67m127 20 24 22" stroke="#b8c5a5" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+        <circle cx="148" cy="126" r="2" fill="#d9e8ba"/><circle cx="227" cy="115" r="2" fill="#d9e8ba"/><circle cx="130" cy="171" r="2" fill="#d9e8ba"/>
+      </svg>`;
+
+    const drawingLotsIllustration = `
+      <svg viewBox="0 0 360 245" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="洞穴中的抽签与食物插画">
+        <ellipse cx="180" cy="218" rx="135" ry="14" fill="#9eb3a1" opacity=".45"/>
+        <path d="M33 209v-72C38 77 91 41 151 47c31-28 79-21 99 5 41 14 72 47 72 89v68H33Z" fill="#506c60"/>
+        <path d="M58 209v-62c0-46 36-79 78-79 24-20 61-16 77 8 38 1 77 31 77 72v61H58Z" fill="#263e38"/>
+        <path d="M60 210c36-20 67-19 92-2 26-16 51-18 76 1 25-16 45-16 67 0v12H60Z" fill="#829785"/>
+        <path d="M113 172h136v7H113z" fill="#b7855e"/><path d="m124 179-10 29m112-29 10 29" stroke="#8c6347" stroke-width="6" stroke-linecap="round"/>
+        <path d="M163 145c-1-26 34-25 34 0v23h-34Z" fill="#e6d5aa"/><path d="M163 146h34" stroke="#a89065" stroke-width="4"/>
+        <path d="M129 130v33m0-33h14m-14 0h-13" stroke="#e1d6b7" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="116" cy="127" r="8" fill="#d7e5a5"/><path d="M111 128h10m-5-5v10" stroke="#536f62" stroke-width="2"/>
+        <circle cx="230" cy="127" r="8" fill="#d7e5a5"/><path d="M226 127h8" stroke="#536f62" stroke-width="2"/>
+        <circle cx="179" cy="202" r="4" fill="#e8c09c"/>
+      </svg>`;
+
+    const revealIllustration = `
+      <svg viewBox="0 0 360 245" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="探险者面对命运选择的插画">
+        <ellipse cx="180" cy="219" rx="137" ry="14" fill="#9eb3a1" opacity=".45"/>
+        <path d="M34 209v-77C39 76 87 38 151 45c33-30 79-20 100 8 41 14 70 49 70 91v65H34Z" fill="#536f62"/>
+        <path d="M62 209v-65c0-45 33-78 78-78 26-20 63-16 81 9 37 2 74 31 74 72v62H62Z" fill="#263e38"/>
+        <path d="M52 208c32-22 59-21 82-2 24-23 49-22 70 0 24-19 51-21 79 0h27v14H52Z" fill="#768e7d"/>
+        <circle cx="180" cy="118" r="15" fill="#d7a47a"/><path d="M165 119c1-16 27-21 33-3v8h-33Z" fill="#d7e5a5"/>
+        <path d="M166 135h28l8 49h-44l8-49Z" fill="#bd7252"/><path d="m170 150-19 18m37-18 18 15m-27 12-15 27m25-27 15 27" fill="none" stroke="#e4bd97" stroke-width="8" stroke-linecap="round"/>
+        <path d="M91 96h43m-22-21v43" stroke="#d7e5a5" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+        <path d="M240 94h33m-16-16v33" stroke="#d7e5a5" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+        <path d="m155 89 25-16 25 16" fill="none" stroke="#b8c5a5" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+
+    const resultIllustration = `
+      <svg viewBox="0 0 360 245" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="探险者共同讨论规则的插画">
+        <ellipse cx="180" cy="219" rx="139" ry="14" fill="#9eb3a1" opacity=".45"/>
+        <path d="M34 209v-75C40 78 90 40 153 46c29-27 77-20 99 6 42 13 73 47 73 91v66H34Z" fill="#536f62"/>
+        <path d="M61 209v-64c0-45 34-78 79-78 26-20 63-16 81 9 37 2 75 31 75 72v61H61Z" fill="#263e38"/>
+        <path d="M91 180h178v7H91z" fill="#b7855e"/><path d="m108 187-7 22m145-22 7 22" stroke="#8c6347" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="133" cy="142" r="11" fill="#d7a47a"/><path d="M121 143c0-13 21-16 25-2v7h-25Z" fill="#d7e5a5"/><path d="M123 155h21l5 23h-31l5-23Z" fill="#c77753"/>
+        <circle cx="226" cy="142" r="11" fill="#d7a47a"/><path d="M214 143c1-13 21-16 25-2v7h-25Z" fill="#d7e5a5"/><path d="M216 155h21l5 23h-31l5-23Z" fill="#8ea67a"/>
+        <path d="M156 159h47" stroke="#d9d8bd" stroke-width="3" stroke-linecap="round"/><circle cx="180" cy="159" r="6" fill="#d7e5a5"/>
+        <path d="M180 104c8-13 27-4 24 8-2 8-24 21-24 21s-22-13-24-21c-3-12 16-21 24-8Z" fill="#d7e5a5" opacity=".88"/>
+      </svg>`;
+
+    const sceneContent = {
+      0: {
+        eyebrow: "思想实验 · 01",
+        title: "洞穴救援",
+        description: "当你不知道自己会是谁，还能为所有人订下一条公平的规则吗？",
+        art: caveIllustration
+      },
+      1: {
+        eyebrow: "第一轮 · 预先立约",
+        title: "先定规则，再知处境",
+        description: "你不知道自己强弱、伤病，也不知道抽签结果。现在，请选择你愿意共同接受的规则。",
+        art: drawingLotsIllustration
+      },
+      2: {
+        eyebrow: "第二轮 · 反转考验",
+        title: "命运落在你身上",
+        description: "抽签结果揭晓：按你选定的规则，需要牺牲的人正是你。你会怎么做？",
+        art: revealIllustration
+      },
+      3: {
+        eyebrow: "思想实验 · 复盘",
+        title: "规则与权利的边界",
+        description: "当共同决定与你自己的生存权冲突，契约还有多大约束力？",
+        art: resultIllustration
+      }
+    };
+
+    let currentStep = 0;
+    let selectedContract = null;
+    let selectedDecision = null;
+
+    const stepPanels = [0, 1, 2, 3].map(step => document.getElementById(`step-${step}`));
+    const progressLabels = ["故事开场", "选择契约", "反转考验", "思想复盘"];
+    const choiceButtons = [...document.querySelectorAll(".choice")];
+    const decisionButtons = [...document.querySelectorAll(".decision-card")];
+    const continueButton = document.getElementById("to-reversal-button");
+    const resultButton = document.getElementById("to-result-button");
+
+    function renderStep(step) {
+      currentStep = step;
+      const scene = sceneContent[step];
+      document.getElementById("stage-eyebrow").textContent = scene.eyebrow;
+      document.getElementById("stage-title").textContent = scene.title;
+      document.getElementById("stage-description").textContent = scene.description;
+      document.getElementById("stage-art").innerHTML = scene.art;
+      document.getElementById("progress-label").textContent = progressLabels[step];
+      document.getElementById("progress-count").textContent = `第 ${step} / 3 步`;
+      document.getElementById("progress-fill").style.width = `${(step / 3) * 100}%`;
+      stepPanels.forEach((panel, index) => panel.classList.toggle("hidden", index !== step));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function setButtonEnabled(button, enabled) {
+      button.disabled = !enabled;
+      button.style.opacity = enabled ? "1" : ".5";
+      button.style.cursor = enabled ? "pointer" : "not-allowed";
+    }
+
+    document.getElementById("start-button").addEventListener("click", () => renderStep(1));
+
+    choiceButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        selectedContract = button.dataset.choice;
+        const contract = contracts[selectedContract];
+        choiceButtons.forEach(option => option.setAttribute("aria-pressed", String(option === button)));
+        document.getElementById("explanation-title").textContent = `${contract.theory}｜${contract.name}`;
+        document.getElementById("explanation-text").textContent = contract.explanation;
+        document.getElementById("choice-explanation").classList.add("visible");
+        document.getElementById("choice-hint").textContent = "已选定规则；可以进入反转考验。";
+        setButtonEnabled(continueButton, true);
+      });
+    });
+
+    continueButton.addEventListener("click", () => {
+      if (!selectedContract) return;
+      const reversal = {
+        A: {
+          stageTitle: "命运落在你身上",
+          stageDescription: "抽签结果指向了你。共同认可的规则，是否仍然约束此刻的你？",
+          heading: "抽签结果指向你",
+          context: "契约已经生效。抽签结果揭晓：按你选定的规则，需要牺牲的人正是你。",
+          honorTitle: "遵守抽签约定",
+          honorDescription: "接受事先共同认可的抽签结果。",
+          alternativeTitle: "反悔",
+          alternativeDescription: "拒绝接受抽签结果，优先保全自己。"
+        },
+        B: {
+          stageTitle: "禁伤约定遭遇考验",
+          stageDescription: "当群体生存压力要求伤害一个人，生命权能否让渡？",
+          heading: "有人提议打破禁伤约定",
+          context: "救援再次延误，食物更加不足。有人提议主动伤害你、牺牲你来让其他人多撑一段时间。你们曾约定禁止主动伤害，且生命权不可让渡。",
+          honorTitle: "坚持禁止主动伤害",
+          honorDescription: "拒绝把任何人的生命当作解决食物短缺的手段。",
+          alternativeTitle: "同意破例",
+          alternativeDescription: "允许大家为多数人的生存而牺牲你，改变原先约定。"
+        },
+        C: {
+          stageTitle: "优先规则带来的代价",
+          stageDescription: "当资源优先给了最脆弱的人，其他人是否应接受短缺？",
+          heading: "优先规则让你挨饿",
+          context: "救援再次延误，食物更加不足。你身体状况良好，食物依约优先留给伤员与弱者；轮到你时，已经没有足够食物了。",
+          honorTitle: "接受优先供给规则",
+          honorDescription: "让食物继续优先供给处境最不利的人。",
+          alternativeTitle: "要求平分食物",
+          alternativeDescription: "不再接受优先次序，要求每个人分到同等份额。"
+        },
+        D: {
+          stageTitle: "没有规则的争抢",
+          stageDescription: "没有共同契约时，个人争取生存与建立共同规则如何取舍？",
+          heading: "争抢中你拿不到食物",
+          context: "你没有和大家立下共同规则。混乱的争抢中，食物被体力更强的人拿走；你现在可以继续各自争抢，也可以提议大家临时共同分配。",
+          honorTitle: "继续各自争抢",
+          honorDescription: "不接受共同规则，靠自己争取食物。",
+          alternativeTitle: "提议共同分配",
+          alternativeDescription: "放下争抢，尝试和其他人临时订立分配规则。"
+        }
+      }[selectedContract];
+      sceneContent[2].title = reversal.stageTitle;
+      sceneContent[2].description = reversal.stageDescription;
+      document.getElementById("reversal-heading").textContent = reversal.heading;
+      document.getElementById("reversal-context").textContent = reversal.context;
+      document.getElementById("honor-title").textContent = reversal.honorTitle;
+      document.getElementById("honor-description").textContent = reversal.honorDescription;
+      document.getElementById("alternative-title").textContent = reversal.alternativeTitle;
+      document.getElementById("alternative-description").textContent = reversal.alternativeDescription;
+      renderStep(2);
+    });
+
+    decisionButtons.forEach(button => {
+      button.addEventListener("click", () => {
+        selectedDecision = button.dataset.decision;
+        decisionButtons.forEach(option => option.setAttribute("aria-pressed", String(option === button)));
+        setButtonEnabled(resultButton, true);
+      });
+    });
+
+    function createResult() {
+      const contract = contracts[selectedContract];
+      const honored = selectedDecision === "honor";
+      const decision = document.getElementById(
+        honored ? "honor-title" : "alternative-title"
+      ).textContent;
+
+      document.getElementById("result-lead").textContent = `你选择了「${contract.name}」，面对反转时决定「${decision}」。`;
+
+      const interpretations = {
+        A: {
+          rousseau: honored
+            ? "你把抽签结果视为共同体事先认可的规则。卢梭的“公意”面向共同利益，而非简单的多数人私利相加；关键追问是，牺牲一人的规则是否真的公平地表达了所有人的共同利益？"
+            : "你拒绝让共同决定自动压过个人。若一项规则把某个人当作工具、不能代表共同利益，它是否还称得上卢梭意义上的公意？",
+          locke: honored
+            ? "即使你愿意履行约定，仍要追问：生命权是否能被个人通过契约交出去？洛克认为自然权利不是可以任意转让的；事先同意抽签，不必然意味着有权授权他人剥夺生命。"
+            : "你的拒绝凸显了洛克的限制：人不能把自己原本没有的权力（例如任意处置生命的权力）转让给共同体。多数决定不能当然取消个人不可转让的自然权利。"
+        },
+        B: {
+          rousseau: honored
+            ? "你坚持共同制定的禁伤规则，即使多数人声称破例有利于大家。卢梭的公意不能简单等同于多数人的即时利益；共同规则也必须保护共同体成员，而不能把某个人工具化。"
+            : "你同意为多数人的生存破例，显示公共利益与共同规则可能发生冲突。卢梭意义上的公意并非任何多数决定；值得追问的是，牺牲个人的决定是否真能代表所有成员的共同利益。",
+          locke: honored
+            ? "这与契约中“生命权不可让渡”的约定一致。按洛克的思路，个人不能把处置生命的权力交给共同体；所以即使食物短缺，也不能据此授权他人主动伤害你。"
+            : "你允许大家主动伤害你，正好触及原约定的内在矛盾：如果生命权不可让渡，个人同意也未必能把处置生命的权力交给多数人。"
+        },
+        C: {
+          rousseau: honored
+            ? "你愿意让资源优先流向最不利者，体现了以共同公平为目标的规则。卢梭的公意要求规则指向共同利益；可以讨论的是，这种优先分配是否获得所有成员的合理认可。"
+            : "你要求平分，强调共同规则也应照顾每个成员。卢梭式的公意不等于任何单一分配方式，关键在于规则能否由成员共同认可并服务于共同利益。",
+          locke: honored
+            ? "洛克的自然权利强调生命不应被他人任意剥夺。优先供给伤弱者是一种资源分配规则，但它不等于授权他人伤害或牺牲你；这两件事需要区分。"
+            : "你要求平分食物，反映分配规则与个人生存之间的张力。洛克的生命权可以限制他人伤害你，但不必然直接决定食物应如何平均分配。"
+        },
+        D: {
+          rousseau: honored
+            ? "继续各自争抢意味着没有共同认可的公共规则。卢梭的公意强调成员共同制定面向共同利益的规则；在各自为战时，这种共同意志很难形成。"
+            : "你尝试从争抢转向共同分配，开始寻求共同规则。卢梭会追问：规则是否由成员共同认可，并服务于公共利益，而非只反映强者的私利？",
+          locke: honored
+            ? "不订立契约不等于没有自然权利。洛克认为人在自然状态中仍享有生命等权利；难题在于，缺少公认的裁决与执行机制时，这些权利可能难以得到保障。"
+            : "你寻求共同分配，试图让权利获得更可靠的公共保障。按洛克的思路，建立共同规则可以保护自然权利，但不能因此把生命权任意交给多数人。"
+        }
+      }[selectedContract];
+      const rousseauText = interpretations.rousseau;
+      const lockeText = interpretations.locke;
+      document.getElementById("rousseau-text").textContent = rousseauText;
+      document.getElementById("locke-text").textContent = lockeText;
+      document.getElementById("discussion-text").textContent = honored
+        ? "共同认可的规则与个人权利发生冲突时，应如何判断规则是否真正代表公意？哪些权利即使在危机中也不能让渡？"
+        : "为了多数人的利益，个人能否同意改变保护自己的规则？共同体的公共利益与不可转让的自然权利，边界在哪里？";
+    }
+
+    resultButton.addEventListener("click", () => {
+      if (!selectedDecision) return;
+      createResult();
+      renderStep(3);
+    });
+
+    function resetExperiment() {
+      selectedContract = null;
+      selectedDecision = null;
+      choiceButtons.forEach(button => button.setAttribute("aria-pressed", "false"));
+      decisionButtons.forEach(button => button.setAttribute("aria-pressed", "false"));
+      document.getElementById("choice-explanation").classList.remove("visible");
+      document.getElementById("choice-hint").textContent = "选择后会出现对应的哲学解读。";
+      setButtonEnabled(continueButton, false);
+      setButtonEnabled(resultButton, false);
+      renderStep(0);
+    }
+
+    document.getElementById("reset-button").addEventListener("click", resetExperiment);
+    document.getElementById("restart-inline").addEventListener("click", resetExperiment);
+    renderStep(0);
+  </script>
+</body>
+</html>
